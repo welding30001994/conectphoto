@@ -1,18 +1,37 @@
-<!DOCTYPE html>
-<html lang="en" >
-<head>
-  <meta charset="UTF-8">
-  <title>git conect</title>
-  
-
-</head>
-<body>
-<!-- partial:index.partial.html -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subir Foto</title>
+    <title>Subir y Borrar Foto</title>
+    <style>
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #status.success {
+            color: green;
+        }
+        #status.error {
+            color: red;
+        }
+        #uploadedImage {
+            margin-top: 20px;
+            max-width: 100%;
+            max-height: 300px;
+        }
+        #deleteButton {
+            margin-top: 10px;
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            display: none;
+        }
+        #deleteButton:hover {
+            background-color: darkred;
+        }
+    </style>
 </head>
 <body>
     <h1>Formulario para Subir Foto</h1>
@@ -20,38 +39,70 @@
     <form id="uploadForm" enctype="multipart/form-data">
         <label for="photo">Selecciona una foto:</label>
         <input type="file" id="photo" name="photo" accept="image/*" required><br><br>
-        <button type="submit">Subir Foto</button>
+        <button type="submit" id="uploadButton">Subir Foto</button>
     </form>
+
+    <div id="status"></div>
+
+    <div id="uploadedImageContainer" style="display: none;">
+        <img id="uploadedImage" src="" alt="Imagen subida" />
+        <button id="deleteButton">Borrar Foto</button>
+    </div>
 
     <script>
         document.getElementById('uploadForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
+            // Desactivar el botón para evitar múltiples envíos
+            const uploadButton = document.getElementById('uploadButton');
+            uploadButton.disabled = true;
+            document.getElementById('status').textContent = "Subiendo foto...";
+
             const formData = new FormData();
             const photo = document.getElementById('photo').files[0];
             formData.append('photo', photo);
 
-            // Enviar la foto al servidor para que la suba a GitHub
             try {
+                // Enviar la foto al servidor para que la suba a GitHub
                 const response = await fetch('/api/upload-photo', {
                     method: 'POST',
                     body: formData
                 });
 
                 if (response.ok) {
-                    alert('Foto subida correctamente');
+                    document.getElementById('status').textContent = 'Foto subida correctamente.';
+                    document.getElementById('status').classList.add('success');
+
+                    // Mostrar la foto subida
+                    const imageUrl = URL.createObjectURL(photo); // URL de la foto subida
+                    const uploadedImage = document.getElementById('uploadedImage');
+                    uploadedImage.src = imageUrl;
+
+                    // Mostrar el contenedor de la imagen subida y el botón de borrar
+                    document.getElementById('uploadedImageContainer').style.display = 'block';
+                    document.getElementById('deleteButton').style.display = 'inline-block';
+
                 } else {
-                    alert('Hubo un error al subir la foto');
+                    throw new Error('Hubo un error al subir la foto');
                 }
             } catch (error) {
-                console.error('Error:', error);
-                alert('Error al subir la foto');
+                document.getElementById('status').textContent = error.message;
+                document.getElementById('status').classList.add('error');
+            } finally {
+                // Reactivar el botón después de la subida
+                uploadButton.disabled = false;
             }
         });
+
+        // Función para borrar la foto (solo en el frontend, no se elimina del servidor)
+        document.getElementById('deleteButton').addEventListener('click', function () {
+            document.getElementById('uploadedImage').src = '';
+            document.getElementById('uploadedImageContainer').style.display = 'none';
+            document.getElementById('deleteButton').style.display = 'none';
+            document.getElementById('status').textContent = 'Foto eliminada.';
+            document.getElementById('status').classList.remove('success');
+            document.getElementById('status').classList.add('error');
+        });
     </script>
-</body>
-</html>
-<!-- partial -->
-  
 </body>
 </html>
